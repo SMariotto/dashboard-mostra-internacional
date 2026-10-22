@@ -1,0 +1,39 @@
+/* Celular: marca, destaque e 5 cartões que abrem ao toque. Texto de 14 px no mínimo. */
+.layout-celular { min-height: 100vh; display: flex; flex-direction: column; font-size: 16px; }
+
+.topo-compacto { flex-wrap: wrap; gap: 8px 12px; padding: 16px 16px 4px; min-height: 0; justify-content: space-between; }
+.topo-compacto .marca { font-size: 17px; }
+.topo-compacto .marca-folha { width: 26px; height: 26px; }
+.topo-compacto .topo-direita { gap: 10px; }
+.topo-compacto .relogio { font-size: 22px; }
+.topo-compacto .pilula { padding: 5px 12px; font-size: 14px; }
+
+.lista-celular { display: flex; flex-direction: column; gap: 14px; padding: 12px 16px 12px; }
+.layout-celular .destaque { padding: 24px 22px 26px; }
+.layout-celular .destaque-frase { font-size: 34px; max-width: none; }
+.layout-celular .dn-valor { font-size: 52px; }
+.layout-celular .dn-rotulo, .layout-celular .destaque-rotulo { font-size: 15px; }
+.layout-celular .destaque-numeros { gap: 20px; }
+
+.bloco { background: var(--cartao); border-radius: 26px; box-shadow: var(--sombra); overflow: hidden; }
+.bloco .tile { width: 100%; padding: 20px 22px; border-radius: 0; box-shadow: none; transform: none; gap: 8px; }
+.bloco .tile:hover { transform: none; box-shadow: none; }
+.layout-celular .bolha { width: 44px; height: 44px; }
+.layout-celular .bolha .icone { width: 24px; height: 24px; }
+.layout-celular .tile-nome { font-size: 19px; }
+.layout-celular .numero-grande { font-size: 52px; }
+.layout-celular .numero-grande .unidade { font-size: 20px; }
+.layout-celular .texto-grande { font-size: 30px; }
+.layout-celular .tile-rotulo { font-size: 15px; }
+.layout-celular .tile-linhas { font-size: 16px; padding-right: 0; gap: 2px 16px; }
+.layout-celular .tile-mais { top: 18px; bottom: auto; right: 18px; width: 40px; height: 40px; }
+.layout-celular .tile-topo { padding-right: 48px; }
+.layout-celular .tile-linhas { padding-right: 0; }
+.layout-celular .pilula { font-size: 14px; padding: 4px 10px; }
+.bloco.aberto .tile-meio, .bloco.aberto .tile-linhas, .bloco.aberto .tile-alertas { display: none; }
+.bloco-corpo { padding: 0 6px 6px; }
+.bloco-corpo .detalhe { box-shadow: none; padding: 8px 16px 20px; }
+.bloco-corpo .stat dt { font-size: 16px; }
+.bloco-corpo .heroi-rotulo { font-size: 16px; }
+.bloco.aberto .tile-topo { margin-bottom: 2px; }
+.celular-rodape { padding: 6px 16px 22px; color: var(--texto-2); font-size: 14px; text-align: center; }

@@ -1,0 +1,28 @@
+{
+  "name": "smart-canada-dashboard",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Dashboard web 3D da maquete Smart Canada 2050 (Módulo 6, 1º INFO B)",
+  "type": "module",
+  "scripts": {
+    "dev": "node ferramentas/dev.js",
+    "build": "vite build",
+    "test": "node --test \"testes/*.test.js\"",
+    "shots": "node ferramentas/shots.js",
+    "contraste": "node ferramentas/contraste.js",
+    "cena": "node ferramentas/cena.js",
+    "pacote": "node ferramentas/pacote.js",
+    "servidor": "node servidor/index.js"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "@fontsource/dm-sans": "^5.3.0",
+    "@fontsource/nunito": "^5.3.0",
+    "playwright": "^1.64.1",
+    "qrcode": "^1.5.4",
+    "three": "^0.186.1",
+    "vite": "^8.3.4"
+  }
+}

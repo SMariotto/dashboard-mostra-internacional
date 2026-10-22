@@ -1,0 +1,102 @@
+/* Modo cartões em tela grande: menu lateral, topo e uma vista por vez. Cabe em 1920x1080 sem rolagem. */
+.layout-cartoes {
+  display: grid; grid-template-columns: 88px minmax(0, 1fr); gap: 28px;
+  height: 100vh; padding: 20px 32px 20px 20px; overflow: hidden;
+}
+.conteudo { display: flex; flex-direction: column; gap: 22px; min-width: 0; min-height: 0; }
+.vista { flex: 1; min-height: 0; overflow: hidden; }
+
+/* ---------- Menu lateral ---------- */
+.menu {
+  display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 24px 0 18px;
+  background: var(--cartao); border-radius: 44px; box-shadow: var(--sombra); min-height: 0;
+}
+.menu-marca { display: block; width: 46px; height: 46px; margin-bottom: 18px; color: var(--vermelho-forte); }
+.menu-marca .icone { width: 100%; height: 100%; }
+.menu-nav { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.menu-item {
+  position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  width: 60px; min-height: 60px; border: 0; border-radius: 30px; background: none; color: var(--texto-2);
+  font-size: 16px; font-weight: 600; cursor: pointer; transition: background var(--vel), color var(--vel);
+}
+.menu-item .icone { width: 28px; height: 28px; }
+.menu-item:hover { background: var(--fundo); color: var(--texto); }
+.menu-item[aria-current="page"] { background: var(--pastel, var(--ardosia-pastel)); color: var(--texto); }
+.menu-item[aria-current="page"]:hover { background: var(--pastel, var(--ardosia-pastel)); }
+.menu-item.area-energia, .menu-item.area-residencial, .menu-item.area-centro, .menu-item.area-mobilidade, .menu-item.area-economia { color: var(--texto); }
+.menu-nav .menu-item:not([aria-current="page"]) .icone { color: var(--forte, var(--texto-2)); }
+.menu-base { display: flex; flex-direction: column; align-items: center; gap: 6px; margin-top: auto; }
+.menu-acao { width: 76px; padding: 8px 0; border-radius: 22px; }
+.menu-ponto {
+  position: absolute; top: 9px; right: 9px; width: 13px; height: 13px; border-radius: 50%;
+  border: 2px solid var(--cartao); background: var(--salvia-forte);
+}
+.menu-ponto[data-estado="alerta"] { background: var(--ambar-forte); }
+.menu-ponto[data-estado="sem_sinal"] { background: var(--cartao); border-color: var(--ardosia-forte); }
+.menu-ponto[data-estado="desativado"] { background: var(--ardosia-forte); }
+
+/* ---------- Topo ---------- */
+.topo { display: flex; align-items: center; gap: 28px; min-height: 76px; }
+.topo-texto { flex: 1; min-width: 0; }
+.topo-linha { display: flex; align-items: center; gap: 16px; }
+.topo-titulo { font-size: 38px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.1; }
+.topo-sub { margin-top: 4px; font-size: 18px; color: var(--texto-2); }
+.topo-direita { display: flex; align-items: center; gap: 16px; }
+.relogio { font-size: 40px; font-weight: 700; letter-spacing: -0.02em; }
+.marca { display: inline-flex; align-items: center; gap: 10px; font-weight: 700; white-space: nowrap; }
+.marca-folha { width: 30px; height: 30px; color: var(--vermelho-forte); }
+.marca-texto b { font-weight: 700; color: var(--vermelho-forte); }
+
+/* ---------- Vista: cidade (grade em blocos de tamanhos diferentes) ---------- */
+.grade-cidade {
+  display: grid; height: 100%; gap: 20px;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  grid-template-rows: repeat(3, minmax(0, 1fr));
+}
+.grade-cidade > .destaque { grid-column: 1 / span 5; grid-row: 1 / span 2; }
+.grade-cidade > .area-energia { grid-column: 6 / span 7; grid-row: 1; }
+.grade-cidade > .area-centro { grid-column: 6 / span 4; grid-row: 2; }
+.grade-cidade > .area-economia { grid-column: 10 / span 3; grid-row: 2; }
+.grade-cidade > .area-residencial { grid-column: 1 / span 5; grid-row: 3; }
+.grade-cidade > .area-mobilidade { grid-column: 6 / span 7; grid-row: 3; }
+
+/* ---------- Vista: uma área ---------- */
+.pagina-area { display: flex; flex-direction: column; gap: 16px; height: 100%; min-height: 0; }
+.voltar { display: inline-flex; align-items: center; gap: 8px; align-self: flex-start; padding: 8px 18px 8px 14px; border-radius: 999px; background: var(--cartao); box-shadow: var(--sombra); font-weight: 600; }
+.voltar:hover { background: var(--fundo); }
+/* O cabeçalho do cartão (ícone, nome, estado) é para o painel estreito do 3D; aqui o topo já diz o nome. */
+.pagina-area .det-topo { display: none; }
+.pagina-area .detalhe { flex: 0 1 auto; max-height: 100%; overflow: auto; padding: 52px 64px; gap: 28px 80px; }
+.pagina-area .heroi .numero-grande { font-size: 168px; }
+.pagina-area .heroi .texto-grande { font-size: 72px; }
+.pagina-area .heroi-rotulo { font-size: 22px; }
+.pagina-area .stat { padding: 20px 0; }
+.pagina-area .stat dt { font-size: 20px; }
+.pagina-area .stat dd { font-size: 28px; }
+.pagina-area .faixa-comandos { padding-top: 32px; }
+
+/* Telas grandes mais baixas (notebook 1366x768): a vista rola dentro da própria área, a página não */
+@media (max-height: 860px) {
+  .grade-cidade { grid-template-rows: repeat(3, minmax(250px, 1fr)); overflow: auto; }
+  .numero-grande { font-size: 60px; }
+  .dn-valor { font-size: 72px; }
+  .destaque-frase { font-size: 48px; }
+}
+@media (max-width: 1500px) {
+  .layout-cartoes { padding-right: 20px; gap: 20px; }
+  .minis .mini { min-width: 120px; padding: 10px 14px; }
+  .destaque { padding: 32px 34px; }
+  .destaque-frase { font-size: 48px; }
+  .dn-valor { font-size: 72px; }
+}
+
+/* Menu lateral em telas baixas (1366 x 768, 1280 x 720): itens mais compactos para tudo caber sem rolar */
+@media (max-height: 860px) {
+  .menu { gap: 4px; padding: 14px 0 10px; border-radius: 40px; }
+  .menu-marca { width: 36px; height: 36px; margin-bottom: 6px; }
+  .menu-nav { gap: 4px; }
+  .menu-item { min-height: 50px; width: 56px; border-radius: 26px; }
+  .menu-item .icone { width: 24px; height: 24px; }
+  .menu-acao { width: 72px; padding: 4px 0; min-height: 50px; }
+  .menu-base { gap: 2px; }
+}

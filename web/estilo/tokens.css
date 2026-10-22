@@ -1,0 +1,38 @@
+/* Visual V1: tema claro, pastéis quentes, folha de bordo. Tokens em um lugar só.
+   A razão de contraste de cada par é conferida por `npm run contraste` (ferramentas/contraste.js). */
+:root {
+  /* Base */
+  --fundo: #F5F1EA;
+  --cartao: #FFFFFF;
+  --texto: #1E2933;
+  --texto-2: #526069;
+  --linha: #E8E2D8;
+
+  /* Cores de apoio. "-pastel" só vai em fundo de cartão, de pílula e de ícone; "-forte" só em bolinhas,
+     barras, traços de ícone e anel de foco (nunca em texto). */
+  --vermelho-pastel: #F6D5D1;
+  --vermelho-forte: #C23B34;
+  --salvia-pastel: #DDEBE2;
+  --salvia-forte: #3F6B54;
+  --gelo-pastel: #E1ECF6;
+  --gelo-forte: #3C6E9B;
+  --ambar-pastel: #F9EBD0;
+  --ambar-forte: #8A5A12;
+  --ardosia-pastel: #E4E8EE;
+  --ardosia-forte: #4A5D73;
+
+  /* Tinta de cada área */
+  --energia-pastel: var(--ambar-pastel);       --energia-forte: var(--ambar-forte);
+  --residencial-pastel: var(--vermelho-pastel); --residencial-forte: var(--vermelho-forte);
+  --centro-pastel: var(--gelo-pastel);          --centro-forte: var(--gelo-forte);
+  --mobilidade-pastel: var(--ardosia-pastel);   --mobilidade-forte: var(--ardosia-forte);
+  --economia-pastel: var(--salvia-pastel);      --economia-forte: var(--salvia-forte);
+
+  /* Formas */
+  --raio-cartao: 28px;
+  --raio-menor: 18px;
+  --sombra: 0 8px 24px rgba(30, 41, 51, 0.06);
+
+  --fonte: 'DM Sans', 'Segoe UI', system-ui, sans-serif;
+  --vel: 180ms;
+}

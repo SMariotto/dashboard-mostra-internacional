@@ -1,0 +1,11 @@
+{
+  "codigos": {
+    "controle": "troque-isto",
+    "administracao": "troque-isto"
+  },
+  "chaveModulos": "troque-isto",
+  "rede": {
+    "nome": "",
+    "senha": ""
+  }
+}

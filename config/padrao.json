@@ -1,0 +1,26 @@
+{
+  "porta": 5050,
+  "tentativasPorta": 10,
+  "modo": "demo",
+  "modoInicial": "auto",
+  "chaveModulos": "chave-de-exemplo-troque",
+  "intervaloLeituraMs": 2000,
+  "semSinalMs": 6000,
+  "historicoMinutos": 10,
+  "intervaloHistoricoMs": 2000,
+  "historicoArquivo": {
+    "intervaloMs": 10000
+  },
+  "comandoExpiraMs": 30000,
+  "alertaRealSemEspMs": 30000,
+  "descoberta": {
+    "porta": 5051,
+    "intervaloMs": 2000
+  },
+  "apresentacao": true,
+  "sessao": {
+    "validadeHoras": 8,
+    "tentativasLogin": 5,
+    "janelaTentativasMin": 5
+  }
+}

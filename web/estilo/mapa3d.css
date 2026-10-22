@@ -1,0 +1,136 @@
+/* Layout do mapa 3D em tela grande: menu | (topo + mapa) | painel fixo de 450 px. Sem rolagem na página. */
+.layout-3d {
+  display: grid; grid-template-columns: 88px minmax(0, 1fr) 450px; gap: 24px;
+  height: 100vh; padding: 20px; overflow: hidden;
+}
+.layout-3d .conteudo { min-width: 0; min-height: 0; }
+.vista-mapa { display: flex; flex-direction: column; gap: 12px; overflow: visible; }
+
+/* ---------- Mapa ---------- */
+.mapa {
+  position: relative; flex: 1; min-height: 0; overflow: hidden; border-radius: var(--raio-cartao);
+  background: var(--fundo); box-shadow: var(--sombra), inset 0 0 0 1px var(--linha);
+}
+.mapa-palco { position: absolute; inset: 0; }
+.mapa-camada { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.mapa-camada > * { pointer-events: auto; }
+
+/* Etiquetas das áreas (HTML sobre a cena) */
+.etiqueta {
+  position: absolute; left: 0; top: 0; z-index: 2;
+  display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px 6px 12px;
+  border-radius: 999px; background: rgba(255, 255, 255, 0.95); box-shadow: 0 4px 14px rgba(30, 41, 51, 0.14);
+  font-size: 20px; font-weight: 700; line-height: 1.2; white-space: nowrap; will-change: transform;
+  transition: box-shadow var(--vel), opacity var(--vel), background var(--vel);
+}
+.etq-ponto { flex: none; width: 12px; height: 12px; border-radius: 50%; background: var(--salvia-forte); }
+.etiqueta[data-estado="alerta"] .etq-ponto { background: var(--ambar-forte); }
+.etiqueta[data-estado="sem_sinal"] .etq-ponto { background: var(--cartao); box-shadow: inset 0 0 0 2px var(--ardosia-forte); }
+.etiqueta[data-estado="desativado"] .etq-ponto { background: var(--ardosia-forte); }
+.etq-estado { display: inline-flex; align-items: center; gap: 4px; font-size: 16px; font-weight: 600; color: var(--texto-2); }
+.etq-estado:empty { display: none; }
+.etq-estado .icone { width: 16px; height: 16px; }
+.etiqueta:hover, .etiqueta.realcada { box-shadow: 0 0 0 3px var(--forte), 0 4px 14px rgba(30, 41, 51, 0.14); }
+.etiqueta.escolhida { background: var(--pastel); box-shadow: 0 0 0 3px var(--forte); }
+.mapa-camada:not([data-selecao=""])[data-selecao] .etiqueta:not(.escolhida) { opacity: 0.72; }
+
+/* Botões do mapa */
+.mapa-controles { flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; }
+.mapa-botao {
+  display: inline-flex; align-items: center; gap: 8px; min-height: 48px; padding: 8px 20px 8px 16px;
+  border: 0; border-radius: 999px; background: var(--cartao); color: var(--texto); box-shadow: var(--sombra);
+  font-size: 17px; font-weight: 600; cursor: pointer; transition: background var(--vel);
+}
+.mapa-botao:hover { background: var(--fundo); }
+.mapa-alternar[aria-pressed="true"] { background: var(--texto); color: var(--cartao); }
+.segmentado { display: inline-flex; align-items: center; gap: 2px; min-height: 48px; padding: 4px 4px 4px 16px; border-radius: 999px; background: var(--cartao); box-shadow: var(--sombra); }
+.seg-rotulo { margin-right: 8px; font-size: 16px; font-weight: 600; color: var(--texto-2); }
+.seg-botao { min-height: 40px; padding: 4px 14px; border: 0; border-radius: 999px; background: none; font-size: 16px; font-weight: 600; cursor: pointer; transition: background var(--vel); }
+.seg-botao:hover:not([aria-pressed="true"]) { background: var(--fundo); }
+.seg-botao[aria-pressed="true"] { background: var(--texto); color: var(--cartao); }
+
+/* Camada de sensores */
+.sensor-rotulo {
+  position: absolute; left: 0; top: 0; z-index: 3; padding: 1px 9px; border: 2px solid var(--forte, var(--ardosia-forte)); border-radius: 999px;
+  background: var(--cartao); color: var(--texto); font-size: 16px; font-weight: 700; line-height: 1.3; cursor: pointer; will-change: transform;
+}
+.sensor-rotulo[data-tipo="esp32"] { background: var(--texto); color: var(--cartao); border-color: var(--texto); }
+.sensor-rotulo[data-sinal]:not([data-sinal="ok"]) { border-color: var(--ardosia-forte); color: var(--texto-2); background: var(--ardosia-pastel); }
+.sensor-rotulo.ativo { background: var(--forte, var(--texto)); color: var(--cartao); }
+.sensor-dica {
+  position: absolute; left: 0; top: 0; z-index: 6; display: flex; flex-direction: column; gap: 6px; width: 300px; padding: 14px 18px;
+  border-radius: 20px; background: var(--cartao); box-shadow: 0 10px 30px rgba(30, 41, 51, 0.2); pointer-events: none; will-change: transform;
+}
+.dica-titulo { font-size: 18px; font-weight: 700; line-height: 1.25; }
+.dica-sub { font-size: 16px; color: var(--texto-2); }
+.dica-linha { display: flex; justify-content: space-between; gap: 12px; font-size: 17px; }
+.dica-linha b { font-weight: 700; text-align: right; }
+
+/* Aviso que some sozinho */
+.aviso-flutuante {
+  position: fixed; top: 24px; left: 50%; z-index: 70; display: flex; align-items: center; gap: 10px; max-width: calc(100vw - 48px);
+  padding: 12px 24px; border-radius: 999px; background: var(--ambar-pastel); box-shadow: 0 8px 28px rgba(30, 41, 51, 0.18);
+  font-size: 18px; font-weight: 600; transform: translateX(-50%);
+}
+.aviso-flutuante .icone { color: var(--ambar-forte); }
+
+/* ---------- Painel fixo à direita ---------- */
+.painel3d { display: flex; flex-direction: column; gap: 14px; min-height: 0; overflow-y: auto; scrollbar-width: none; }
+.painel3d::-webkit-scrollbar { display: none; }
+.painel3d > * { flex: none; }
+.painel3d .voltar { align-self: flex-start; }
+.painel3d .detalhe.estreito { padding: 24px 26px; }
+
+/* Cartão de área compacto: nome e estado em cima, o número grande com o rótulo embaixo */
+.painel3d .tile { display: flex; flex-direction: column; justify-content: center; gap: 6px; min-height: 0; padding: 14px 20px; border-radius: 24px; }
+.painel3d .tile-topo { gap: 12px; padding-right: 44px; }
+.painel3d .tile .bolha { width: 40px; height: 40px; }
+.painel3d .tile .bolha .icone { width: 22px; height: 22px; }
+.painel3d .tile-nome { font-size: 20px; }
+.painel3d .tile-meio { flex-direction: row; align-items: baseline; flex-wrap: wrap; gap: 0 12px; }
+.painel3d .tile .numero-grande { font-size: 40px; gap: 6px; }
+.painel3d .tile .numero-grande .unidade { font-size: 18px; }
+.painel3d .tile .texto-grande { font-size: 26px; }
+.painel3d .tile-rotulo { font-size: 16px; }
+.painel3d .tile-linhas { display: none; }
+.painel3d .tile-aviso { font-size: 16px; }
+.painel3d .tile-mais { top: 14px; right: 18px; bottom: auto; width: 36px; height: 36px; }
+.painel3d .tile-mais .icone { width: 18px; height: 18px; }
+.painel3d .tile:hover { transform: none; }
+.painel3d .tile[data-sinal="sem_sinal"] .tile-meio, .painel3d .tile[data-sinal="desativado"] .tile-meio { opacity: 0.5; }
+.aviso-acao { flex: none; min-height: 40px; padding: 6px 18px; border: 0; border-radius: 999px; background: var(--texto); color: var(--cartao); font-size: 17px; font-weight: 600; cursor: pointer; }
+.aviso-fechar { flex: none; display: grid; place-items: center; width: 36px; height: 36px; border: 0; border-radius: 50%; background: none; cursor: pointer; }
+.aviso-fechar:hover { background: rgba(255, 255, 255, 0.6); }
+
+/* ---------- Telas menores: 1366 x 768 e 1280 x 720 ---------- */
+@media (max-width: 1500px) {
+  .layout-3d { grid-template-columns: 88px minmax(0, 1fr) 400px; gap: 20px; padding: 16px; }
+  .layout-3d .minis { display: none; }
+  .layout-3d .topo-titulo { font-size: 32px; }
+  .layout-3d .relogio { font-size: 34px; }
+  .layout-3d .topo-direita { gap: 12px; }
+  .seg-rotulo { display: none; }
+  .segmentado { padding-left: 4px; }
+}
+@media (max-height: 860px) {
+  .layout-3d { gap: 16px; padding: 12px 16px; }
+  .layout-3d .topo { min-height: 60px; }
+  .layout-3d .conteudo { gap: 12px; }
+  .painel3d { gap: 10px; scrollbar-width: thin; }
+  .painel3d::-webkit-scrollbar { display: block; width: 6px; }
+  .painel3d::-webkit-scrollbar-thumb { background: var(--linha); border-radius: 3px; }
+  .painel3d .destaque.estreito { padding: 18px 22px 20px; gap: 8px; }
+  .painel3d .destaque.estreito .destaque-frase { font-size: 30px; }
+  .painel3d .destaque.estreito .dn-valor { font-size: 42px; }
+  .painel3d .destaque-folha { width: 220px; height: 220px; }
+  .painel3d .tile { padding: 10px 18px; gap: 2px; }
+  .painel3d .tile .numero-grande { font-size: 34px; }
+  .painel3d .tile .texto-grande { font-size: 22px; }
+  .painel3d .tile-mais { top: 10px; }
+  .painel3d .detalhe.estreito { padding: 18px 22px; gap: 10px; }
+  .painel3d .detalhe.estreito .heroi .numero-grande { font-size: 56px; }
+  .painel3d .stat { padding: 9px 0; }
+  .mapa-botao { min-height: 44px; }
+  .segmentado { min-height: 44px; }
+  .seg-botao { min-height: 36px; }
+}
