@@ -274,3 +274,40 @@ export function buscarBloco(id) {
 export function pontoDentro(px, py, r) {
   return px >= r.x && px <= r.x + r.w && py >= r.y && py <= r.y + r.h;
 }
+
+// ---------------------------------------------------------------------------
+// fotos 22/10
+// Itens que a maquete física tem a mais que a planta (fotos de 22/10/2026). Nada acima mudou: posições de
+// blocos, vias, sensores e ESP32 continuam as da planta. Só o desenho 3D usa esta seção (a planta oficial
+// não tem estes itens). Posições razoáveis dentro do bloco certo, sem encostar nos itens da planta.
+// ---------------------------------------------------------------------------
+export const FOTOS_22_10 = {
+  residencial: {
+    // 4ª casa (branca com telhado de zinco ondulado marrom e janela azul), atrás da faixa verde-água.
+    casasExtras: [{ id: 'casa4', x: 17, y: 75, w: 7.5, h: 7.5, alturaParede: 5.2 }],
+    // Faixa verde-água comprida com pedrinhas brancas nas duas bordas.
+    faixaVerde: { x: 9, y: 70, w: 36, h: 3, cor: '#4FBFA5' },
+    // Retalhos de grama sintética entre as casas.
+    retalhosGrama: [
+      { x: 4.6, y: 56, w: 3.6, h: 10 },
+      { x: 19.8, y: 57, w: 1.8, h: 8 },
+      { x: 32.8, y: 57, w: 1.8, h: 8 },
+      { x: 45.6, y: 56, w: 3.6, h: 10 },
+      { x: 27, y: 75, w: 10, h: 6 },
+    ],
+  },
+  energia: {
+    // 2 painéis a mais (a foto mostra 4) e 2 turbinas a mais (a foto mostra 3; a da planta é a primeira).
+    // As pás têm 8 cm: cada turbina fica a 8 cm ou mais das bordas do bloco (x 4 a 32), para o rotor não passar por cima da rua.
+    paineisExtras: [{ x: 17.8, y: 12.2, w: 8.5, h: 4.5 }, { x: 17.5, y: 25.5, w: 8.5, h: 5 }],
+    turbinasExtras: [{ cx: 12.5, cy: 9 }, { cx: 24, cy: 9 }],
+    raioBaseTurbina: 2.5, // base redonda branca com pedrinhas
+  },
+  mobilidade: {
+    // Trilho circular de brinquedo no lugar do trilho reto da planta (o reto não é mais desenhado).
+    circulo: { cx: 74, cy: 67, raioExterno: 14, raioInterno: 11.8 }, // anel de 2,2 cm: o trem cabe nele
+    base: { x: 59, y: 51, w: 30, h: 30 }, // base marrom escura debaixo do círculo
+    galpao: { x: 93, y: 54, w: 13, h: 7, altura: 3.4 }, // galpão marrom de telhado baixo (provável estação)
+    pedrinhas: { x: 93, y: 62.5, w: 9, h: 8 }, // retalho de pedrinhas brancas ao lado do galpão
+  },
+};

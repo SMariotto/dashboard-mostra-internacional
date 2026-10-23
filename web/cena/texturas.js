@@ -125,3 +125,78 @@ export function texturaPersiana(cor) {
   t.wrapS = t.wrapT = THREE.RepeatWrapping;
   return t;
 }
+
+// ---------------------------------------------------------------------------
+// fotos 22/10: texturas pequenas (64 px) das casas, das lojas e dos letreiros
+// ---------------------------------------------------------------------------
+
+/** Telhado de escamas de papelão: fileiras de arcos. */
+export function texturaEscamas(base, linha) {
+  const t = tela(64, 64, (g, w, h) => {
+    g.fillStyle = base;
+    g.fillRect(0, 0, w, h);
+    g.strokeStyle = linha;
+    g.lineWidth = 2;
+    for (let fila = 0; fila < 4; fila++) {
+      const y = fila * 16 + 16;
+      for (let x = (fila % 2) * 8 - 8; x < w + 16; x += 16) {
+        g.beginPath();
+        g.arc(x + 8, y - 16, 8, 0, Math.PI);
+        g.stroke();
+      }
+    }
+  });
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  return t;
+}
+
+/** Telhado de zinco ondulado: listras que correm da cumeeira ao beiral. */
+export function texturaZinco(base, sombra) {
+  const t = tela(32, 32, (g, w, h) => {
+    g.fillStyle = base;
+    g.fillRect(0, 0, w, h);
+    g.fillStyle = sombra;
+    for (let x = 0; x < w; x += 8) g.fillRect(x + 5, 0, 3, h);
+  });
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  return t;
+}
+
+/** Porta de madeira com grade. */
+export function texturaGrade(fundo, linha) {
+  return tela(48, 80, (g, w, h) => {
+    g.fillStyle = fundo;
+    g.fillRect(0, 0, w, h);
+    g.strokeStyle = linha;
+    g.lineWidth = 2;
+    for (let x = 6; x < w; x += 10) { g.beginPath(); g.moveTo(x, 4); g.lineTo(x, h - 4); g.stroke(); }
+    for (let y = 8; y < h; y += 14) { g.beginPath(); g.moveTo(4, y); g.lineTo(w - 4, y); g.stroke(); }
+  });
+}
+
+/** Letreiro: texto escuro sobre fundo claro, com borda. */
+export function texturaLetreiro(texto, fundo = '#F8F5EE', cor = '#233A63', borda = '#8A93A0') {
+  return tela(256, 64, (g, w, h) => {
+    g.fillStyle = borda;
+    g.fillRect(0, 0, w, h);
+    g.fillStyle = fundo;
+    g.fillRect(5, 5, w - 10, h - 10);
+    g.fillStyle = cor;
+    g.font = 'italic 700 34px "DM Sans", "Segoe UI", sans-serif';
+    g.textAlign = 'center';
+    g.textBaseline = 'middle';
+    g.fillText(texto, w / 2, h / 2 + 2);
+  });
+}
+
+/** Toldo listrado (listras verticais de duas cores). */
+export function texturaToldo(c1, c2) {
+  const t = tela(64, 16, (g, w, h) => {
+    for (let x = 0; x < w; x += 16) {
+      g.fillStyle = (x / 16) % 2 === 0 ? c1 : c2;
+      g.fillRect(x, 0, 16, h);
+    }
+  });
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  return t;
+}

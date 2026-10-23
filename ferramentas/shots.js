@@ -385,6 +385,7 @@ const CAPTURAS = {
       const cor = (m) => m.color.getHexString();
       return {
         rotorZ: o.energia.rotor.rotation.z,
+        rotoresZ: o.energia.rotores.map((r) => r.rotation.z),
         carros: o.centro.carros.filter((c) => c.visible).length,
         luzes: Object.fromEntries(Object.entries(o.centro.luzes).map(([k, l]) => [k, cor(l.mat)])),
         aguaEscala: o.economia.agua.scale.y,
@@ -392,7 +393,8 @@ const CAPTURAS = {
         persiana: o.residencial.persiana.scale.y,
         boneco: o.residencial.boneco.visible,
         ledPostes: cena.postes.halos.visible,
-        tremX: o.mobilidade.trem.position.x,
+        tremF: o.mobilidade.fracao(), // fração de volta no círculo
+        estacaoF: o.mobilidade.fracaoEstacao,
         mapaDesativado: !!cena.base.blocos.economia.laje.material.map,
       };
     });
@@ -411,26 +413,27 @@ const CAPTURAS = {
     const a2 = await lerCena(pagina);
     console.log('15 ligações dos dados com a cena (dia):');
     confere('turbina gira com eolica_w = 5', Math.abs(a2.rotorZ - a1.rotorZ) > 0.5, `${(a1.rotorZ - a2.rotorZ).toFixed(2)} rad em 0,6 s`);
-    confere('carros nas vagas = 4 menos vagas_livres (3)', a1.carros === 3, `${a1.carros}`);
+    confere('as 3 turbinas giram juntas', a1.rotoresZ.length === 3 && a1.rotoresZ.every((z, i) => Math.abs(a2.rotoresZ[i] - z) > 0.5), `${a1.rotoresZ.length} rotores`);
+    confere('sem carros desenhados (praça, estacionamento e carros saíram do 3D; o dado vagas_livres segue no cartão)', a1.carros === 0, `${a1.carros}`);
     confere('semáforo vermelho aceso e verde apagado', a1.luzes.vermelho !== a1.luzes.verde && a1.luzes.vermelho === 'd9534b', JSON.stringify(a1.luzes));
     confere('água do reservatório em 30%', Math.abs(a2.aguaEscala - 3.3 * 0.3) < 0.15, a2.aguaEscala.toFixed(2));
     confere('gotas visíveis com a bomba ligada', a1.gotas === true);
     confere('persiana fechada (escala 1)', a1.persiana > 0.9, a1.persiana.toFixed(2));
     confere('bonequinho aparece com presenca', a1.boneco === true);
     confere('LEDs dos postes apagados (postes desligados, de dia)', a1.ledPostes === false);
-    confere('trem se mexe em "em movimento"', Math.abs(a2.tremX - a1.tremX) > 5, `${(a2.tremX - a1.tremX).toFixed(1)} cm em 0,6 s`);
+    const dF = (x, y) => ((x - y + 1.5) % 1) - 0.5; // diferença de fração de volta, com a volta completa
+    confere('trem dá voltas em "em movimento"', Math.abs(dF(a2.tremF, a1.tremF)) > 0.03, `${(dF(a2.tremF, a1.tremF) * 100).toFixed(1)} % da volta em 0,6 s`);
 
     await alimentar({ centro: { postes: 'ligados', vagas_livres: 4, semaforo: 'verde' }, residencial: { persiana: 'aberta', presenca: false }, economia: { bomba: false }, mobilidade: { trem: 'na estacao' }, energia: { eolica_w: 0 } });
-    await espera(5000);
+    await espera(7500); // o trem pode estar do outro lado do círculo: uma volta leva uns 5 s
     const b = await lerCena(pagina);
     await espera(700);
     const b2 = await lerCena(pagina);
     confere('LEDs dos postes acesos (postes ligados)', b.ledPostes === true);
-    confere('nenhum carro com 4 vagas livres', b.carros === 0, `${b.carros}`);
     confere('persiana aberta (recolhida)', b.persiana < 0.2, b.persiana.toFixed(2));
     confere('bonequinho some sem presenca', b.boneco === false);
     confere('gotas somem com a bomba desligada', b.gotas === false);
-    confere('trem para na plataforma (x = 77)', Math.abs(b.tremX - 77) < 0.5, b.tremX.toFixed(1));
+    confere('trem para na estação (ao lado do galpão)', Math.abs(dF(b.tremF, b.estacaoF)) < 0.01, `${(dF(b.tremF, b.estacaoF) * 100).toFixed(2)} % da volta de diferença`);
     confere('turbina parada com eolica_w = 0', Math.abs(b2.rotorZ - b.rotorZ) < 0.3, `${(b.rotorZ - b2.rotorZ).toFixed(2)} rad`);
 
     // Sem sinal: tudo da área para.
@@ -442,7 +445,7 @@ const CAPTURAS = {
     await espera(700);
     const c2 = await lerCena(pagina);
     confere('turbina para quando a Energia fica sem sinal', Math.abs(c2.rotorZ - c1.rotorZ) < 0.3, `${(c1.rotorZ - c2.rotorZ).toFixed(2)} rad`);
-    confere('trem para quando a Mobilidade fica sem sinal', Math.abs(c2.tremX - c1.tremX) < 0.5, `${(c2.tremX - c1.tremX).toFixed(2)} cm`);
+    confere('trem para quando a Mobilidade fica sem sinal', Math.abs(dF(c2.tremF, c1.tremF)) < 0.005, `${(dF(c2.tremF, c1.tremF) * 100).toFixed(2)} % da volta`);
 
     // Desativado: listras na Economia.
     const admin = (await api('POST', '/api/login', { codigo: CODIGOS.administracao })).token;

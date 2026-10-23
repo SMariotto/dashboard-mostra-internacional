@@ -11,6 +11,7 @@
     "shots": "node ferramentas/shots.js",
     "contraste": "node ferramentas/contraste.js",
     "cena": "node ferramentas/cena.js",
+    "colisoes": "node ferramentas/colisoes.js",
     "pacote": "node ferramentas/pacote.js",
     "servidor": "node servidor/index.js"
   },

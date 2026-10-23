@@ -88,6 +88,7 @@ Sensor desligado no sketch **não manda o campo** e o cartão mostra "--". Com `
 - `node ferramentas/conferir-esp32.js`: confere os sketches e o `docs/API.md` contra o contrato e o servidor (não compila nada).
 - `npm run shots`: capturas de tela em `docs/shots/` (precisa do `npm run build` antes).
 - `npm run cena`: confere a cena 3D contra a planta e mede os quadros por segundo.
+- `npm run colisoes`: confere tamanhos, sobreposições, altura dos marcadores de sensor e enquadramento da câmera do mapa 3D.
 - `npm run contraste`: confere o contraste das cores.
 
 ## Documentos

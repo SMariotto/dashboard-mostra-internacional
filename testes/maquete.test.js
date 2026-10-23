@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   PALETE, BLOCOS, VIAS, POSTES, SENSORES, ARVORES, FAIXAS_PEDESTRE,
-  ENERGIA, CENTRO, ECONOMIA, RESIDENCIAL, MOBILIDADE, buscarBloco, pontoDentro,
+  ENERGIA, CENTRO, ECONOMIA, RESIDENCIAL, MOBILIDADE, FOTOS_22_10, buscarBloco, pontoDentro,
 } from '../compartilhado/maquete.js';
 import { IDS_MODULOS } from '../compartilhado/contrato.js';
 
@@ -72,5 +72,49 @@ test('sensores: 5 ESP32 e marcadores dentro do bloco do módulo (S8 e S9 ficam n
       continue;
     }
     assert.ok(pontoDentro(s.cx, s.cy, buscarBloco(s.modulo)), `${s.id} fora do bloco ${s.modulo}`);
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Seção "fotos 22/10" de maquete.js: itens que a maquete física tem a mais que a planta
+// ---------------------------------------------------------------------------
+const sobrepoe = (a, b) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+const retDoCirculo = (cx, cy, r) => ({ x: cx - r, y: cy - r, w: 2 * r, h: 2 * r });
+
+test('fotos 22/10: itens novos ficam dentro do bloco certo e não encostam nos da planta', () => {
+  const R = FOTOS_22_10.residencial;
+  const res = buscarBloco('residencial');
+  const casas = [...RESIDENCIAL.casas, ...R.casasExtras];
+  for (const r of [...R.casasExtras, R.faixaVerde, ...R.retalhosGrama]) assert.ok(retDentro(r, res), `residencial: item em (${r.x}, ${r.y}) fora do bloco`);
+  for (const c of R.casasExtras) {
+    for (const o of [...RESIDENCIAL.casas, RESIDENCIAL.calcada, R.faixaVerde]) assert.ok(!sobrepoe(c, o), `${c.id} encosta em item da residencial`);
+    for (const a of ARVORES.filter((x) => x.bloco === 'residencial')) assert.ok(!sobrepoe(c, retDoCirculo(a.cx, a.cy, a.r)), `${c.id} em cima de árvore`);
+  }
+  assert.ok(!sobrepoe(R.faixaVerde, RESIDENCIAL.calcada), 'faixa verde em cima da calçada');
+  assert.equal(new Set(casas.map((c) => c.id)).size, 4, 'esperava 4 casas com ids diferentes');
+
+  const E = FOTOS_22_10.energia;
+  const ene = buscarBloco('energia');
+  const paineis = [...ENERGIA.paineisSolares, ...E.paineisExtras];
+  assert.equal(paineis.length, 4);
+  for (const p of E.paineisExtras) assert.ok(retDentro(p, ene), 'painel novo fora do bloco da energia');
+  const turbinas = [ENERGIA.turbina, ...E.turbinasExtras];
+  assert.equal(turbinas.length, 3);
+  for (const t of turbinas) {
+    const base = retDoCirculo(t.cx, t.cy, E.raioBaseTurbina);
+    assert.ok(retDentro(base, ene), `base da turbina em (${t.cx}, ${t.cy}) fora do bloco`);
+    for (const p of paineis) assert.ok(!sobrepoe(base, p), `base da turbina em (${t.cx}, ${t.cy}) em cima de painel`);
+  }
+  for (let i = 0; i < paineis.length; i++) for (let j = i + 1; j < paineis.length; j++) assert.ok(!sobrepoe(paineis[i], paineis[j]), 'painéis se sobrepõem');
+
+  const M = FOTOS_22_10.mobilidade;
+  const mob = buscarBloco('mobilidade');
+  const anel = retDoCirculo(M.circulo.cx, M.circulo.cy, M.circulo.raioExterno);
+  for (const r of [M.base, M.galpao, M.pedrinhas, anel]) assert.ok(retDentro(r, mob), 'item novo da mobilidade fora do bloco');
+  assert.ok(retDentro(anel, M.base), 'o anel não cabe na base marrom');
+  assert.ok(!sobrepoe(M.galpao, M.base) && !sobrepoe(M.pedrinhas, M.base), 'galpão ou pedrinhas em cima da base');
+  assert.ok(!sobrepoe(M.base, MOBILIDADE.faixaTerminal), 'base em cima da faixa do terminal');
+  for (const a of ARVORES.filter((x) => x.bloco === 'mobilidade')) {
+    assert.ok(Math.hypot(a.cx - M.circulo.cx, a.cy - M.circulo.cy) > M.circulo.raioExterno + a.r, `árvore (${a.cx}, ${a.cy}) em cima do trilho circular`);
   }
 });

@@ -1,11 +1,11 @@
 // Liga os dados do servidor (o /api/estado) à cena: tudo o que a SPEC seção 4 prende a um campo do contrato.
 //
-//   energia      eolica_w -> velocidade da turbina; bateria_pct -> LED da caixa de baterias
-//   centro       semaforo -> luz acesa; vagas_livres -> carros nas vagas; postes -> LEDs (e halos);
+//   energia      eolica_w -> velocidade das 3 turbinas; bateria_pct -> LED da caixa de baterias
+//   centro       semaforo -> luz acesa; vagas_livres -> carros nas vagas (sem desenho desde as fotos de 22/10); postes -> LEDs (e halos);
 //                janelas acendem de noite
 //   economia     reservatorio_pct -> água (aro pisca abaixo de 20%); bomba -> gotas da irrigação
 //   residencial  iluminacao -> janelas; persiana -> persiana; presenca -> bonequinho; aquecimento -> brilho
-//   mobilidade   trem / demonstracao -> trem anda; proximo_veiculo -> painel de partidas
+//   mobilidade   trem / demonstracao -> trem dá voltas no círculo (o painel de partidas não é mais desenhado)
 //
 // Módulo "sem sinal": bloco dessaturado e tudo parado. "Desativado": dessaturado e listrado.
 import * as THREE from 'three';
@@ -16,7 +16,7 @@ import { Y_BLOCO, texturaHalo } from './util.js';
 import { reduzMovimento } from '../ui/dom.js';
 
 const VELOCIDADE_TURBINA = 0.9; // rad/s por W de geração eólica
-const VELOCIDADE_TREM = 22; // cm/s
+const VELOCIDADE_TREM = 16; // cm/s ao longo do círculo
 
 /**
  * @param {object} cena a cena de criarCena()
@@ -32,7 +32,7 @@ export function ligarDados(cena, ambiente) {
     rotor: 0, rotorAlvo: 0,
     nivel: 0.67, nivelAlvo: 0.67,
     persiana: 1, persianaAlvo: 1,
-    tremModo: 'parado', tremDir: 1, tremAlvoEstacao: false,
+    tremModo: 'parado',
     alertaReservatorio: false, bomba: false,
   };
 
@@ -118,7 +118,7 @@ export function ligarDados(cena, ambiente) {
     const parado = reduzMovimento();
     // Turbina: a velocidade acompanha a eólica sem trancos.
     anim.rotor = suave(anim.rotor, anim.rotorAlvo, dt, 1.5);
-    objetos.energia.rotor.rotation.z -= anim.rotor * dt;
+    for (const rotor of objetos.energia.rotores) rotor.rotation.z -= anim.rotor * dt;
 
     // Reservatório: a água sobe e desce; abaixo de 20% o aro pisca.
     anim.nivel = suave(anim.nivel, anim.nivelAlvo, dt, parado ? 100 : 2);
@@ -135,19 +135,14 @@ export function ligarDados(cena, ambiente) {
     objetos.residencial.definirPersiana(anim.persiana);
     if (brilhoAquecimento.visible) brilhoAquecimento.material.opacity = 0.45 + (parado ? 0 : Math.sin(t * 1.6) * 0.1);
 
-    // Trem: anda de ponta a ponta, vai para a plataforma ou fica onde está.
+    // Trem: dá voltas no círculo, para "na estação" ao lado do galpão ou fica onde está.
     const M = objetos.mobilidade;
-    const tr = M.trem;
+    const passo = (VELOCIDADE_TREM * dt) / M.circunferencia; // fração de volta neste quadro
     if (anim.tremModo === 'movimento') {
-      let x = tr.position.x + anim.tremDir * VELOCIDADE_TREM * dt;
-      if (x >= M.xMax) { x = M.xMax; anim.tremDir = -1; }
-      if (x <= M.xMin) { x = M.xMin; anim.tremDir = 1; }
-      M.definirX(x);
-      tr.rotation.y = anim.tremDir > 0 ? 0 : Math.PI;
+      M.definirFracao(M.fracao() + passo);
     } else if (anim.tremModo === 'estacao') {
-      const dx = M.xPlataforma - tr.position.x;
-      if (Math.abs(dx) > 0.05) M.definirX(tr.position.x + Math.sign(dx) * Math.min(Math.abs(dx), VELOCIDADE_TREM * dt));
-      tr.rotation.y = 0;
+      const falta = (((M.fracaoEstacao - M.fracao()) % 1) + 1) % 1; // sempre para a frente
+      if (falta > 0.002 && falta < 0.998) M.definirFracao(M.fracao() + Math.min(falta, passo)); // 0,998: já chegou (não dá outra volta)
     }
   });
 

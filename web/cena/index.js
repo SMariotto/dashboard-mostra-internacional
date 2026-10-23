@@ -115,7 +115,7 @@ export function criarCena(contenedor, op = {}) {
     const cam = new THREE.PerspectiveCamera(camera.fov, camera.aspect, 10, 900);
     const cantos = [];
     for (const x of [caixa3.min.x, caixa3.max.x]) for (const z of [caixa3.min.z, caixa3.max.z]) for (const y of [caixa3.min.y, caixa3.max.y]) cantos.push(new THREE.Vector3(x, y, z));
-    let baixo = 25, alto = 700;
+    let baixo = 25, alto = 1500;
     for (let i = 0; i < 26; i++) {
       const d = (baixo + alto) / 2;
       cam.position.copy(alvo).addScaledVector(dir, d);
@@ -134,7 +134,7 @@ export function criarCena(contenedor, op = {}) {
   /** Vista de uma área (id) ou da cidade inteira ('cidade'): onde a câmera deve ficar. */
   function vistaDe(id) {
     if (id === 'cidade' || !objetos[id]) {
-      return vistaQueEnquadra(new THREE.Box3(new THREE.Vector3(0, -2, 0), new THREE.Vector3(PALETE.largura, 22, PALETE.profundidade)), ELEVACAO_PADRAO, 0.95);
+      return vistaQueEnquadra(new THREE.Box3(new THREE.Vector3(0, -2, 0), new THREE.Vector3(PALETE.largura, 24, PALETE.profundidade)), ELEVACAO_PADRAO, 0.95);
     }
     const caixa3 = new THREE.Box3().setFromObject(base.blocos[id].grupo).union(new THREE.Box3().setFromObject(objetos[id].grupo));
     return vistaQueEnquadra(caixa3, 50, 0.74);
@@ -175,6 +175,16 @@ export function criarCena(contenedor, op = {}) {
     const altura = meioLarg / (w / h);
     cameraCima.left = -meioLarg; cameraCima.right = meioLarg; cameraCima.top = altura; cameraCima.bottom = -altura;
     cameraCima.updateProjectionMatrix();
+    // Em janela estreita ou quadrada a maquete inteira (ou um bloco) não cabe a 260 cm: o zoom máximo acompanha o
+    // enquadramento, para nunca ser preciso cortar a maquete. Em tela de PC de verdade (mais larga que alta) fica 260.
+    let precisa = 260;
+    for (const id of ['cidade', ...Object.keys(objetos)]) {
+      const v = vistaDe(id);
+      precisa = Math.max(precisa, v.pos.distanceTo(v.alvo) * 1.05);
+    }
+    controls.maxDistance = precisa;
+    camera.far = Math.max(900, precisa * 2.2);
+    camera.updateProjectionMatrix();
   }
   const observador = new ResizeObserver(redimensionar);
   observador.observe(contenedor);

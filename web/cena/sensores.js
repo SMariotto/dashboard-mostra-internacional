@@ -10,7 +10,9 @@ import { h } from '../ui/dom.js';
 import { numero, textoCampo } from '../ui/formatar.js';
 import { Y_BLOCO } from './util.js';
 
-const ALTURA_PINO = 6.4;
+const ALTURA_PINO = 6.4; // altura padrão do pino (cm acima do bloco)
+const RAIO_MARCADOR = 0.95;
+const FOLGA_MARCADOR = 0.8; // espaço entre o fundo do marcador e o que há embaixo dele
 const CINZA = '#9AA3AB';
 const COR_ESP = '#33465C';
 
@@ -39,9 +41,28 @@ export function criarSensores(cena, camada, { obterEstado }) {
   grupo.visible = false;
   cena.scene.add(grupo);
 
+  // Altura do pino de cada marcador: a padrão, ou mais alta só quando há um objeto da maquete (casa, prédio...) no mesmo
+  // ponto x/z que esconderia o marcador. A posição x/z e o ID nunca mudam. Um raio de cima para baixo acha o topo do objeto.
+  cena.maquete.updateMatrixWorld(true);
+  const alvos = [];
+  cena.maquete.traverse((o) => {
+    if (!o.isMesh || o.material?.transparent) return;
+    for (let p = o; p; p = p.parent) if (!p.visible) return;
+    alvos.push(o);
+  });
+  const raio = new THREE.Raycaster();
+  const baixo = new THREE.Vector3(0, -1, 0);
+  function alturaDoPino(it) {
+    raio.set(new THREE.Vector3(it.cx, 80, it.cy), baixo);
+    const topo = raio.intersectObjects(alvos, false)[0]?.point.y;
+    if (topo === undefined) return ALTURA_PINO;
+    return Math.max(ALTURA_PINO, topo - Y_BLOCO + FOLGA_MARCADOR + RAIO_MARCADOR);
+  }
+
   const matStem = new THREE.MeshBasicMaterial({ color: '#7A8794' });
   const geoStem = new THREE.CylinderGeometry(0.09, 0.09, 1, 6);
   const marcadores = SENSORES.map((it) => {
+    const altura = alturaDoPino(it);
     const forte = cena.tintas[`${it.modulo}Forte`];
     const mat = new THREE.MeshBasicMaterial({ color: it.tipo === 'esp32' ? COR_ESP : forte });
     let geo;
@@ -49,12 +70,12 @@ export function criarSensores(cena, camada, { obterEstado }) {
     else if (it.tipo === 'atuador') geo = new THREE.OctahedronGeometry(1.15);
     else geo = new THREE.SphereGeometry(0.95, 14, 10);
     const m = new THREE.Mesh(geo, mat);
-    m.position.set(it.cx, Y_BLOCO + ALTURA_PINO, it.cy);
+    m.position.set(it.cx, Y_BLOCO + altura, it.cy);
     m.userData.sensor = it;
     m.name = `sensor-${it.id}`;
     const stem = new THREE.Mesh(geoStem, matStem);
-    stem.scale.y = ALTURA_PINO;
-    stem.position.set(it.cx, Y_BLOCO + ALTURA_PINO / 2, it.cy);
+    stem.scale.y = altura;
+    stem.position.set(it.cx, Y_BLOCO + altura / 2, it.cy);
     grupo.add(m, stem);
 
     const rotulo = h('button', { type: 'button', class: `sensor-rotulo area-${it.modulo}`, 'data-tipo': it.tipo, tabindex: '-1', 'aria-label': `${it.id}: ${it.descricao}` }, it.id);
@@ -63,7 +84,7 @@ export function criarSensores(cena, camada, { obterEstado }) {
     rotulo.addEventListener('pointerleave', () => { if (passando === it) passando = null; });
     rotulo.hidden = true;
     camada.append(rotulo);
-    return { it, mat, mesh: m, rotulo, ancora: new THREE.Vector3(it.cx, Y_BLOCO + ALTURA_PINO + 1.5, it.cy) };
+    return { it, mat, mesh: m, rotulo, altura, ancora: new THREE.Vector3(it.cx, Y_BLOCO + altura + 1.5, it.cy) };
   });
 
   // ---------- Dica ----------
@@ -122,7 +143,7 @@ export function criarSensores(cena, camada, { obterEstado }) {
     if (alvo) {
       if (t - ultimaConteudo > 1) { dica.replaceChildren(...conteudo(alvo)); ultimaConteudo = t; }
       const mk = marcadores.find((m) => m.it === alvo);
-      v.set(alvo.cx, Y_BLOCO + ALTURA_PINO, alvo.cy).project(cena.camera);
+      v.set(alvo.cx, Y_BLOCO + (mk?.altura ?? ALTURA_PINO), alvo.cy).project(cena.camera);
       const x = (v.x * 0.5 + 0.5) * larg, y = (-v.y * 0.5 + 0.5) * alt;
       // A dica abre para o lado em que há mais espaço.
       const paraEsquerda = x > larg * 0.6;
@@ -134,6 +155,8 @@ export function criarSensores(cena, camada, { obterEstado }) {
 
   return {
     get ligada() { return ligada; },
+    /** Altura (cm acima do bloco) do pino de cada marcador, por ID. */
+    alturas: () => Object.fromEntries(marcadores.map((m) => [m.it.id, +m.altura.toFixed(2)])),
     ligar(valor) {
       ligada = !!valor;
       grupo.visible = ligada;

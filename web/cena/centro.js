@@ -1,80 +1,102 @@
-// Bloco 3: Centro Urbano. 3 prédios com janelas, praça circular, semáforo, estacionamento com 4 vagas.
+// Bloco 3: Centro Urbano (fotos de 22/10). Candy Sweet (loja baixa rosa com toldo listrado), Shopping (frente azul clara
+// com grade de janelas, porta vermelha dupla e letreiro, parte de trás azul escura mais alta), um prédio alto azul escuro
+// e o semáforo de palito. Não há mais praça circular, estacionamento nem carros no desenho: os dados `vagas_livres` e os
+// sensores S4 a S7 continuam (marcadores sem objeto embaixo). As janelas dividem UM material (modo noite).
 import * as THREE from 'three';
 import { CENTRO } from '../../compartilhado/maquete.js';
 import { COR } from './paleta.js';
+import { texturaLetreiro, texturaToldo } from './texturas.js';
 import { caixa, caixaCentro, cilindro, clarear, sombras, marcarArea, etiquetaPlanta, Y_BLOCO } from './util.js';
 import { arvoresDaArea } from './arvores.js';
 
-/** Janelas de um prédio: grade de quadradinhos nas 4 faces, num só desenho (geometria juntada). */
-function janelasDoPredio(p, material) {
+/**
+ * Grade de janelas quadradas na face da frente (voltada para o visitante, +z) de um corpo {x, y, w, h, altura},
+ * num só desenho (geometria juntada). `desdeNivel` pula as fileiras de baixo (onde fica a porta).
+ */
+function janelasDaFrente(p, material, { desdeNivel = 0 } = {}) {
   const pos = [];
   const idx = [];
   let n = 0;
-  const quad = (cx, cy, cz, ux, uz, w, h) => {
-    // Retângulo vertical centrado em (cx, cy, cz), largura w ao longo de (ux, uz), altura h.
-    const hx = (ux * w) / 2, hz = (uz * w) / 2, hy = h / 2;
-    pos.push(cx - hx, cy - hy, cz - hz, cx + hx, cy - hy, cz + hz, cx + hx, cy + hy, cz + hz, cx - hx, cy + hy, cz - hz);
+  const quad = (cx, cy, cz, w, h) => {
+    pos.push(cx - w / 2, cy - h / 2, cz, cx + w / 2, cy - h / 2, cz, cx + w / 2, cy + h / 2, cz, cx - w / 2, cy + h / 2, cz);
     idx.push(n, n + 1, n + 2, n, n + 2, n + 3, n, n + 2, n + 1, n, n + 3, n + 2);
     n += 4;
   };
-  const eps = 0.03;
-  const largJ = 0.95, altJ = 1.2;
-  const nivelMax = Math.floor((p.altura - 1.2) / 2.6);
-  const face = (comprimento, fixo, ladoZ, ladoX) => {
-    const cols = Math.max(1, Math.floor((comprimento - 0.6) / 2));
-    const passo = comprimento / cols;
-    for (let c = 0; c < cols; c++) {
-      for (let r = 0; r <= nivelMax; r++) {
-        const alt = Y_BLOCO + 1.4 + r * 2.6;
-        const off = -comprimento / 2 + passo * (c + 0.5);
-        if (ladoZ !== 0) quad(fixo.cx + off, alt, fixo.cz + ladoZ * (fixo.d / 2 + eps), 1, 0, largJ, altJ);
-        else quad(fixo.cx + ladoX * (fixo.d / 2 + eps), alt, fixo.cz + off, 0, 1, largJ, altJ);
-      }
+  const cols = Math.max(1, Math.floor((p.w - 0.6) / 1.9));
+  const passo = p.w / cols;
+  const niveis = Math.floor((p.altura - 1.2) / 2.4);
+  for (let c = 0; c < cols; c++) {
+    for (let r = desdeNivel; r <= niveis; r++) {
+      quad(p.x + passo * (c + 0.5), Y_BLOCO + 1.4 + r * 2.4, p.y + p.h + 0.03, 1.1, 1.3);
     }
-  };
-  const cx = p.x + p.w / 2, cz = p.y + p.h / 2;
-  face(p.w, { cx, cz, d: p.h }, 1, 0);
-  face(p.w, { cx, cz, d: p.h }, -1, 0);
-  face(p.h, { cx, cz, d: p.w }, 0, 1);
-  face(p.h, { cx, cz, d: p.w }, 0, -1);
+  }
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
   geo.setIndex(idx);
   return new THREE.Mesh(geo, material);
 }
 
+// Alturas desenhadas (cm). As pegadas vêm da planta; a altura da planta (8, 12 e 16) deixava o Shopping alto e estreito
+// demais: na foto-42 a frente do Shopping é mais larga que alta, e o prédio azul é cerca de 3 vezes a loja Candy Sweet.
+const ALTURA = { candy: 3.8, shoppingFrente: 5.5, shoppingTras: 8.5, torre: 11 };
+
 export function construirCentro(F) {
   const g = new THREE.Group();
   g.name = 'centro';
   const A = 'centro';
+  const [pCandy, pShopping, pTorre] = CENTRO.predios;
 
-  // Prédios baixos em cinzas (o mais alto à direita). As janelas compartilham UM material: o modo
-  // noite (F4) troca a cor dele de vidro para luz acesa.
+  // Material único das janelas: o modo noite (F4) troca a cor dele de vidro para luz acesa.
   const matJanela = F.matUnico(A, COR.janelaDia, { basico: true });
-  CENTRO.predios.forEach((p, i) => {
-    const corpo = caixa(p, Y_BLOCO, p.altura, F.mat(A, COR.predio[i]), { arredondar: 0.3 });
-    etiquetaPlanta(corpo, 'predio', { x: p.x, y: p.y, w: p.w, h: p.h });
-    const topo = caixa({ x: p.x - 0.15, y: p.y - 0.15, w: p.w + 0.3, h: p.h + 0.3 }, Y_BLOCO + p.altura, 0.3, F.mat(A, clarear(COR.predio[i], 0.35)), { arredondar: 0.1 });
-    g.add(corpo, topo, janelasDoPredio(p, matJanela));
-  });
 
-  // Praça circular azul clara com um anel interno.
-  const P = CENTRO.praca;
-  const praca = cilindro(P.cx, P.cy, P.raio, Y_BLOCO, 0.18, F.mat(A, COR.praca));
-  etiquetaPlanta(praca, 'praca', { x: P.cx - P.raio, y: P.cy - P.raio, w: P.raio * 2, h: P.raio * 2 });
-  const anel = new THREE.Mesh(new THREE.TorusGeometry(P.raioAnel, 0.12, 8, 40), F.mat(A, COR.pracaAnel));
-  anel.rotation.x = Math.PI / 2;
-  anel.position.set(P.cx, Y_BLOCO + 0.22, P.cy);
-  const agua = cilindro(P.cx, P.cy, P.raioAnel - 0.1, Y_BLOCO + 0.18, 0.06, F.mat(A, COR.pracaAguaCentro));
-  g.add(praca, anel, agua);
+  // ---- Candy Sweet: loja baixa rosa, topo claro, toldo listrado rosa e branco e letreiro ----
+  const altCandy = ALTURA.candy;
+  const candy = caixa(pCandy, Y_BLOCO, altCandy, F.mat(A, COR.candyParede), { arredondar: 0.25 });
+  etiquetaPlanta(candy, 'predio', { x: pCandy.x, y: pCandy.y, w: pCandy.w, h: pCandy.h });
+  const topoCandy = caixa({ x: pCandy.x - 0.2, y: pCandy.y - 0.2, w: pCandy.w + 0.4, h: pCandy.h + 0.4 }, Y_BLOCO + altCandy, 0.4, F.mat(A, COR.candyTopo), { arredondar: 0.12 });
+  const cxC = pCandy.x + pCandy.w / 2;
+  const frenteC = pCandy.y + pCandy.h;
+  const texToldo = texturaToldo(COR.candyToldoRosa, '#FFFFFF');
+  texToldo.repeat.set(2.5, 1);
+  const toldo = new THREE.Mesh(new THREE.BoxGeometry(pCandy.w + 0.5, 0.18, 1.7), F.mat(A, '#FFFFFF', { map: texToldo }));
+  toldo.rotation.x = 0.32; // a ponta da frente desce
+  toldo.position.set(cxC, Y_BLOCO + altCandy - 0.45, frenteC + 0.75);
+  const letreiroC = new THREE.Mesh(new THREE.PlaneGeometry(pCandy.w - 0.9, 1.1), F.mat(A, '#FFFFFF', { map: texturaLetreiro('Candy Sweet'), roughness: 0.9 }));
+  letreiroC.position.set(cxC, Y_BLOCO + altCandy + 0.95, frenteC + 0.1);
+  g.add(candy, topoCandy, toldo, letreiroC);
+  for (const dx of [-1.5, 1.5]) g.add(caixaCentro(cxC + dx, frenteC + 0.05, 1.3, 0.1, Y_BLOCO + 0.7, 1.4, matJanela));
 
-  // Semáforo: poste fino e uma caixa com as 3 luzes, voltada para a avenida (o visitante). Cada luz
-  // tem o seu material; a que está acesa segue o campo `semaforo`, as outras ficam apagadas.
+  // ---- Shopping: frente azul clara (janelas e porta vermelha dupla) e parte de trás azul escura, mais alta ----
+  const fundoProf = 2.4; // profundidade da parte de trás
+  const shopTras = { x: pShopping.x, y: pShopping.y, w: pShopping.w, h: fundoProf };
+  const shopFrente = { x: pShopping.x, y: pShopping.y + fundoProf, w: pShopping.w, h: pShopping.h - fundoProf, altura: ALTURA.shoppingFrente };
+  const shopping = new THREE.Group();
+  shopping.add(
+    caixa(shopTras, Y_BLOCO, ALTURA.shoppingTras, F.mat(A, COR.shoppingTras), { arredondar: 0.25 }),
+    caixa(shopFrente, Y_BLOCO, shopFrente.altura, F.mat(A, COR.shoppingParede), { arredondar: 0.25 }),
+    caixa({ x: shopFrente.x - 0.15, y: shopFrente.y - 0.0, w: shopFrente.w + 0.3, h: shopFrente.h + 0.15 }, Y_BLOCO + shopFrente.altura, 0.35, F.mat(A, clarear(COR.shoppingParede, 0.45)), { arredondar: 0.1 }),
+  );
+  etiquetaPlanta(shopping, 'predio', { x: pShopping.x, y: pShopping.y, w: pShopping.w, h: pShopping.h });
+  g.add(shopping, janelasDaFrente(shopFrente, matJanela, { desdeNivel: 1 }));
+  const cxS = pShopping.x + pShopping.w / 2;
+  const frenteS = pShopping.y + pShopping.h;
+  const matPortaS = F.mat(A, COR.shoppingPorta);
+  for (const dx of [-0.5, 0.5]) g.add(caixaCentro(cxS + dx, frenteS + 0.06, 0.9, 0.12, Y_BLOCO, 2.5, matPortaS));
+  const letreiroS = new THREE.Mesh(new THREE.PlaneGeometry(pShopping.w - 1.2, 1.15), F.mat(A, '#FFFFFF', { map: texturaLetreiro('Shopping', '#F8F5EE', '#233A8F'), roughness: 0.9 }));
+  letreiroS.position.set(cxS, Y_BLOCO + shopFrente.altura + 0.95, frenteS + 0.1);
+  g.add(letreiroS);
+
+  // ---- Prédio alto azul escuro ----
+  const torre = caixa(pTorre, Y_BLOCO, ALTURA.torre, F.mat(A, COR.torreAzul), { arredondar: 0.3 });
+  etiquetaPlanta(torre, 'predio', { x: pTorre.x, y: pTorre.y, w: pTorre.w, h: pTorre.h });
+  g.add(torre, caixa({ x: pTorre.x - 0.15, y: pTorre.y - 0.15, w: pTorre.w + 0.3, h: pTorre.h + 0.3 }, Y_BLOCO + ALTURA.torre, 0.3, F.mat(A, clarear(COR.torreAzul, 0.3)), { arredondar: 0.1 }));
+
+  // ---- Semáforo de palito: haste de madeira e uma caixa escura pequena com as 3 luzes, voltada para a avenida ----
+  // Cada luz tem o seu material; a que está acesa segue o campo `semaforo`, as outras ficam apagadas.
   const S = CENTRO.semaforo;
   const sx = S.caixa.x + S.caixa.w / 2, sz = S.caixa.y + S.caixa.h / 2;
-  const matCaixaSem = F.mat(A, COR.semaforoCaixa);
-  const posteSem = cilindro(sx, sz, 0.18, Y_BLOCO, 5.2, matCaixaSem, 10);
-  const cabeca = caixaCentro(sx, sz, S.caixa.w - 0.2, 1.0, Y_BLOCO + 3.3, 3.6, matCaixaSem, { arredondar: 0.3 });
+  const posteSem = cilindro(sx, sz, 0.16, Y_BLOCO, 5.2, F.mat(A, COR.semaforoMadeira), 10);
+  const cabeca = caixaCentro(sx, sz, S.caixa.w - 0.2, 1.0, Y_BLOCO + 3.3, 3.6, F.mat(A, COR.semaforoCaixaEscura), { arredondar: 0.3 });
   etiquetaPlanta(cabeca, 'semaforo', { x: S.caixa.x, y: S.caixa.y, w: S.caixa.w, h: S.caixa.h });
   g.add(posteSem, cabeca);
   const luzes = {};
@@ -90,46 +112,10 @@ export function construirCentro(F) {
   // Estado inicial de repouso (F4 liga pelo dado): verde aceso.
   luzes.verde.mat.color.set(luzes.verde.acesa);
 
-  // Estacionamento: placa branca de 24 x 12 com as divisões das 4 vagas (x 58 e y 26).
-  const E = CENTRO.estacionamento;
-  const pad = caixa(E, Y_BLOCO, 0.12, F.mat(A, COR.estacionamento));
-  etiquetaPlanta(pad, 'estacionamento', { x: E.x, y: E.y, w: E.w, h: E.h });
-  const matLinha = F.mat(A, COR.estacionamentoLinha);
-  g.add(
-    pad,
-    caixa({ x: 58 - 0.12, y: E.y, w: 0.24, h: E.h }, Y_BLOCO + 0.12, 0.04, matLinha),
-    caixa({ x: E.x, y: 26 - 0.12, w: E.w, h: 0.24 }, Y_BLOCO + 0.12, 0.04, matLinha),
-    caixa({ x: E.x, y: E.y, w: E.w, h: 0.2 }, Y_BLOCO + 0.12, 0.04, matLinha),
-    caixa({ x: E.x, y: E.y + E.h - 0.2, w: E.w, h: 0.2 }, Y_BLOCO + 0.12, 0.04, matLinha),
-    caixa({ x: E.x, y: E.y, w: 0.2, h: E.h }, Y_BLOCO + 0.12, 0.04, matLinha),
-    caixa({ x: E.x + E.w - 0.2, y: E.y, w: 0.2, h: E.h }, Y_BLOCO + 0.12, 0.04, matLinha),
-  );
-
-  // Carros pequenos, um por vaga; F4 mostra (4 menos vagas_livres) deles.
-  const carros = E.vagas.map((v, i) => {
-    const c = new THREE.Group();
-    const cor = F.mat(A, COR.carros[i]);
-    const corpo = new THREE.Mesh(new THREE.BoxGeometry(5.2, 1.1, 2.6), cor);
-    corpo.position.y = 0.8;
-    const cabine = new THREE.Mesh(new THREE.BoxGeometry(2.7, 0.95, 2.2), F.mat(A, '#E8EEF3'));
-    cabine.position.set(-0.2, 1.8, 0);
-    const matRoda = F.mat(A, COR.roda);
-    for (const [dx, dz] of [[-1.7, 1.35], [1.7, 1.35], [-1.7, -1.35], [1.7, -1.35]]) {
-      const r = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 0.4, 12), matRoda);
-      r.rotation.x = Math.PI / 2;
-      r.position.set(dx, 0.5, dz);
-      c.add(r);
-    }
-    c.add(corpo, cabine);
-    c.position.set(v.cx, Y_BLOCO + 0.12, v.cy);
-    etiquetaPlanta(c, 'carro', { x: v.cx - 3, y: v.cy - 1.5, w: 6, h: 3 });
-    g.add(c);
-    return c;
-  });
-
   g.add(arvoresDaArea(F, A));
   sombras(g);
   g.traverse((o) => { if (o.isMesh && o.material === matJanela) o.castShadow = false; });
   marcarArea(g, A);
-  return { grupo: g, matJanela, luzes, carros };
+  // `carros` fica vazio: não há mais carros nem vagas desenhadas (o dado vagas_livres continua no contrato).
+  return { grupo: g, matJanela, luzes, carros: [] };
 }

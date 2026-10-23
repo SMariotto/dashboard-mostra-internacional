@@ -6,48 +6,45 @@
 // ponto ou como forma diferente da 3D (turbina, semáforo), compara só o centro.
 import * as THREE from 'three';
 import {
-  PALETE, BLOCOS, VIAS, ENERGIA, CENTRO, ECONOMIA, RESIDENCIAL, MOBILIDADE, ARVORES, POSTES,
+  PALETE, BLOCOS, VIAS, ENERGIA, CENTRO, ECONOMIA, RESIDENCIAL, MOBILIDADE, ARVORES, POSTES, FOTOS_22_10,
 } from '../../compartilhado/maquete.js';
 
 const TOL = 0.6; // cm
-const SO_CENTRO = new Set(['turbina', 'semaforo', 'carro']);
+const SO_CENTRO = new Set(['turbina', 'semaforo']);
 
 const circulo = (c) => ({ x: c.cx - c.raio, y: c.cy - c.raio, w: c.raio * 2, h: c.raio * 2 });
 const bloco = (id) => BLOCOS.find((b) => b.id === id);
 
 /** O que a planta manda, por tipo de item: lista de retângulos {x, y, w, h}. */
 function esperado() {
-  const E = CENTRO.estacionamento;
+
   return {
     palete: [{ x: 0, y: 0, w: PALETE.largura, h: PALETE.profundidade }],
     asfalto: [PALETE.util],
     ...Object.fromEntries(BLOCOS.map((b) => [`bloco:${b.id}`, [{ x: b.x, y: b.y, w: b.w, h: b.h }]])),
     ...Object.fromEntries(VIAS.map((v) => [`via:${v.id}`, [{ x: v.x, y: v.y, w: v.w, h: v.h }]])),
-    painel: ENERGIA.paineisSolares,
+    painel: [...ENERGIA.paineisSolares, ...FOTOS_22_10.energia.paineisExtras],
     baterias: [ENERGIA.baterias],
-    turbina: [{ x: ENERGIA.turbina.cx, y: ENERGIA.turbina.cy, w: 0, h: 0 }],
+    turbina: [{ cx: ENERGIA.turbina.cx, cy: ENERGIA.turbina.cy }, ...FOTOS_22_10.energia.turbinasExtras].map((t) => ({ x: t.cx, y: t.cy, w: 0, h: 0 })),
     predio: CENTRO.predios,
-    praca: [circulo({ cx: CENTRO.praca.cx, cy: CENTRO.praca.cy, raio: CENTRO.praca.raio })],
     semaforo: [{ x: CENTRO.semaforo.caixa.x, y: CENTRO.semaforo.caixa.y, w: CENTRO.semaforo.caixa.w, h: CENTRO.semaforo.caixa.h }],
-    estacionamento: [{ x: E.x, y: E.y, w: E.w, h: E.h }],
-    carro: E.vagas.map((v) => ({ x: v.cx - 3, y: v.cy - 1.5, w: 6, h: 3 })),
     feltro: [bloco('economia')],
     lixeira: ECONOMIA.lixeiras.map((l) => ({ x: l.x, y: l.y, w: l.w, h: l.h })),
     reservatorio: [circulo(ECONOMIA.reservatorio)],
     canteiro: ECONOMIA.canteiros,
-    casa: RESIDENCIAL.casas.map((c) => ({ x: c.x, y: c.y, w: c.w, h: c.h })),
+    casa: [...RESIDENCIAL.casas, ...FOTOS_22_10.residencial.casasExtras].map((c) => ({ x: c.x, y: c.y, w: c.w, h: c.h })),
+    'faixa-verde': [FOTOS_22_10.residencial.faixaVerde],
     'painel-telhado': [RESIDENCIAL.painelTelhado],
     calcada: [RESIDENCIAL.calcada],
     'ponto-escuro': RESIDENCIAL.pontosEscuros.map(circulo),
     persiana: [{ x: RESIDENCIAL.persiana.cx - 0.2, y: RESIDENCIAL.persiana.cy - RESIDENCIAL.persiana.largura / 2, w: 0.4, h: RESIDENCIAL.persiana.largura }],
     boneco: [{ x: RESIDENCIAL.presenca.cx - 0.8, y: RESIDENCIAL.presenca.cy - 0.8, w: 1.6, h: 1.6 }],
-    trilho: [{ x: MOBILIDADE.trilho.x1, y: MOBILIDADE.trilho.y, w: MOBILIDADE.trilho.x2 - MOBILIDADE.trilho.x1, h: MOBILIDADE.trilho.bitola }],
-    plataforma: [MOBILIDADE.plataforma],
-    'ponto-onibus': [MOBILIDADE.pontoOnibus],
-    'painel-partidas': [{ x: MOBILIDADE.painelPartidas.cx - 1.5, y: MOBILIDADE.painelPartidas.cy - 1, w: 3, h: 2 }],
-    onibus: [MOBILIDADE.onibus],
+    // fotos 22/10: trilho circular, base, galpão (o trilho reto, a plataforma, o ponto de ônibus, o painel de partidas,
+    // o ônibus e o banco não são mais desenhados)
+    'base-circulo': [FOTOS_22_10.mobilidade.base],
+    'circulo-trilho': [{ x: FOTOS_22_10.mobilidade.circulo.cx - FOTOS_22_10.mobilidade.circulo.raioExterno, y: FOTOS_22_10.mobilidade.circulo.cy - FOTOS_22_10.mobilidade.circulo.raioExterno, w: FOTOS_22_10.mobilidade.circulo.raioExterno * 2, h: FOTOS_22_10.mobilidade.circulo.raioExterno * 2 }],
+    galpao: [FOTOS_22_10.mobilidade.galpao],
     'faixa-terminal': [MOBILIDADE.faixaTerminal],
-    banco: [MOBILIDADE.peca],
   };
 }
 
@@ -133,12 +130,11 @@ export function conferirPlanta(cena) {
   }
   itens.push({ item: 'postes', desvioMax: +desvioPoste.toFixed(3), ok: okPoste });
 
-  // Dormentes: a cada 3 cm, de x 61 a 109.
-  const dorm = cena.objetos.mobilidade.grupo.getObjectByName('dormentes');
-  const esperados = Math.floor((109 - MOBILIDADE.trilho.x1) / MOBILIDADE.trilho.passoDormente + 1e-9) + 1;
-  const okDorm = dorm.count === esperados;
-  if (!okDorm) falhas.push(`dormentes: esperava ${esperados} e a cena tem ${dorm.count}`);
-  itens.push({ item: 'dormentes', desvioMax: 0, ok: okDorm });
+  // Travessas do trilho circular: 48 em volta do anel.
+  const dorm = cena.objetos.mobilidade.grupo.getObjectByName('travessas');
+  const okDorm = dorm.count === 48;
+  if (!okDorm) falhas.push(`travessas: esperava 48 e a cena tem ${dorm.count}`);
+  itens.push({ item: 'travessas', desvioMax: 0, ok: okDorm });
 
   return { ok: falhas.length === 0, falhas, itens, total: itens.length };
 }

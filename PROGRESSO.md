@@ -59,6 +59,11 @@ Próxima: **F5 (tablet, toque, passeio automático, teclas e menu D)**.
 - **NÃO conferido nesta rodada:** os sketches (continuam sem compilar; as mudanças do MODO_TESTE foram só lidas e conferidas em texto); ESP32 de verdade; o notebook do professor; o GitHub (nada foi publicado: não há remote nem `gh`) e como o GitHub desenha o README e o Mermaid; a Release; o `INICIAR.bat` abrindo o navegador em tela cheia; o guia do operador seguido por alguém que não programa.
 - **Bloqueio para publicar:** todos os commits têm o e-mail pessoal `mariotto.sim@gmail.com`. Não publicar antes de resolver (`docs/PUBLICAR-NO-GITHUB.md`). O histórico não foi mexido.
 
+## Mapa 3D fiel às fotos de 22/10 (branch `fotos-22-10`, 22/10/2026)
+- O 3D agora segue a maquete física das fotos: 4 casas de duas águas e faixa verde-água (Residencial), 3 turbinas e 4 painéis sobre grama (Energia), trilho circular com trem de 3 vagões e galpão (Mobilidade), Shopping, Candy Sweet e prédio alto azul (Centro Urbano), postes em bengala. Sem ônibus, ponto de ônibus, painel de partidas, banco, plataforma, praça, estacionamento e carros no desenho (os dados deles continuam no contrato e nos cartões). Planta, IDs e contrato não mudaram. Diagnóstico em `docs/3d-diferencas.md`; decisões em `docs/DECISOES.md` 159 a 166.
+- Conferido: `npm test` 45 passam; `npm run cena` bate com a planta (34 itens) e dá 60 quadros por segundo na placa de vídeo do PC (499 sem o limite) e 9 a 21 em software, como antes; `npm run shots -- 15` (20 ligações dos dados com a cena) passa; capturas 01 a 06 refeitas e olhadas. Meshes 236 para 219, chamadas de desenho 412 para 379, triângulos 46.976 para 68.144.
+- **NÃO conferido:** comparação lado a lado com as fotos por outra pessoa; notebook do professor; modelo ultrassônico nos marcadores (não feito); o que as fotos não mostram (Economia Circular, baterias, árvores) ficou como estava.
+
 ## Falta
 - **F5** (próxima), F7. A F8 mínima já foi feita; refazer o zip (`npm run build` e `npm run pacote`) depois de qualquer mudança.
 - Para a F7: gráficos de 10 minutos nos cartões; passar a vista do mapa por uma revisão de textos.
@@ -79,6 +84,7 @@ Próxima: **F5 (tablet, toque, passeio automático, teclas e menu D)**.
 - Telas: `/` (mapa 3D com painel), `/?modo=cartoes` (plano B), `/?modo=celular`, `/?modo=cena&debug=1` (só o mapa, para conferências).
 - `npm run pacote`: zip da entrega em `entrega/` (precisa do `npm run build`).
 - `npm run cena`: conferência da cena 3D contra a planta, limites da câmera e quadros por segundo.
+- `npm run colisoes`: tamanhos, sobreposições, pinos dos sensores e câmera do 3D (decisões 167 a 169).
 - `node ferramentas/esp-falso.js [--modulos a,b] [--falhar mobilidade] [--depois 20] [--servidor ip:porta] [--teste]`
 - `node ferramentas/conferir-esp32.js [--copiar]`: confere sketches e `docs/API.md`.
 - `npm test`
